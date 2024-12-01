@@ -13,25 +13,31 @@ pub fn main() {
     |> result.unwrap("")
     |> string.trim() 
 
-  io.debug(part2(input))
+  io.print("Part 1: ")
+  io.println(part1(input))
+
+  io.print("Part 2: ")
+  io.println(part2(input))
 }
 
-fn part1(input: String) -> Int {
-  let #(sorted_a, sorted_b) = parse_lists(input)
-    |> pair.map_first(fn (xs) { list.sort(xs, int.compare) })
-    |> pair.map_second(fn (xs) { list.sort(xs, int.compare) })
+fn part1(input: String) -> String {
+  let #(list_a, list_b) = parse_lists(input)
+  let sorted_a = list.sort(list_a, int.compare)
+  let sorted_b = list.sort(list_b, int.compare)
 
-  let diffs = list.map2(sorted_a, sorted_b, fn (a, b) { int.absolute_value(b - a) })
-  int.sum(diffs)
+  list.map2(sorted_a, sorted_b, fn (a, b) { int.absolute_value(b - a) })
+    |> int.sum 
+    |> int.to_string
 }
 
-fn part2(input: String) -> Int {
+fn part2(input: String) -> String {
   let #(list_a, list_b) = parse_lists(input)
   let freqs = frequencies(list_b)
 
   list_a 
     |> list.map(fn (a) { a * { dict.get(freqs, a) |> result.unwrap(0) }})
     |> int.sum
+    |> int.to_string
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -43,12 +49,11 @@ fn part2(input: String) -> Int {
 /// Parse an input line into a pair of integers
 /// Defaults to 0 if parsing the int fails
 fn parse_pair(input: String) -> #(Int, Int) {
-  let assert Ok(#(a, b)) = string.split_once(input, " ")
+  let assert [Ok(a), Ok(b)] = input 
+    |> string.split("   ")
+    |> list.map(int.parse)
 
-  pair.new(
-    a |> string.trim |> int.parse |> result.unwrap(0) ,
-    b |> string.trim |> int.parse |> result.unwrap(0),
-  )
+  #(a, b)
 }
 
 /// Parse the input into a pair of integer lists
