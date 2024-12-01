@@ -2,8 +2,10 @@ import gleam/io
 import gleam/string
 import gleam/pair
 import gleam/int
+import gleam/dict
 import gleam/list
 import gleam/result
+import gleam/option.{Some, None}
 import simplifile as fs
 
 pub fn main() {
@@ -23,6 +25,14 @@ fn part1(input: String) -> Int {
   int.sum(diffs)
 }
 
+fn part2(input: String) -> Int {
+  let #(list_a, list_b) = parse_lists(input)
+  let freqs = frequencies(list_b)
+
+  list_a 
+    |> list.map(fn (a) { a * { dict.get(freqs, a) |> result.unwrap(0) }})
+    |> int.sum
+}
 
 ////////////////////////////////////////////////////////////////////////////////
 //
@@ -47,4 +57,15 @@ fn parse_lists(input: String) -> #(List(Int), List(Int)) {
     |> string.split("\n") 
     |> list.map(parse_pair)
     |> list.unzip
+}
+
+/// Build a frequency table for a list of items
+fn frequencies(items: List(itemtype)) -> dict.Dict(itemtype, Int) {
+  use freqs, item <- list.fold(items, dict.new())
+  use prev <- dict.upsert(freqs, item)
+
+  case prev {
+    Some(n) -> n + 1
+    None    -> 1
+  }
 }
