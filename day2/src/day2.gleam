@@ -11,21 +11,21 @@ type Report =
 
 pub fn main() {
   let assert Ok(reports) =
-    fs.read(from: "./input.txt")
+    fs.read("./input.txt")
     |> result.unwrap("")
     |> string.trim()
     |> parse_input
 
-  io.println("Part 1: " <> part1(reports))
-  io.println("Part 2: " <> part2(reports))
+  io.println("Part 1: " <> int.to_string(part1(reports)))
+  io.println("Part 2: " <> int.to_string(part2(reports)))
 }
 
-fn part1(reports: List(Report)) -> String {
-  reports |> list.count(is_safe(_, 0)) |> int.to_string
+fn part1(reports: List(Report)) -> Int {
+  list.count(reports, is_safe(_, 0))
 }
 
-fn part2(reports: List(Report)) -> String {
-  reports |> list.count(is_safe(_, 1)) |> int.to_string
+fn part2(reports: List(Report)) -> Int {
+  list.count(reports, is_safe(_, 1))
 }
 
 /// Check whether a report is safe, omitting up to `threshold` levels
@@ -48,14 +48,12 @@ fn is_safe(report: Report, threshold: Int) -> Bool {
 fn parse_input(input: String) -> Result(List(Report), Nil) {
   input
   |> string.split("\n")
-  |> list.map(parse_report)
-  |> result.all
+  |> list.try_map(parse_report)
 }
 
 fn parse_report(line: String) -> Result(Report, Nil) {
   line
   |> string.trim()
   |> string.split(" ")
-  |> list.map(int.parse)
-  |> result.all
+  |> list.try_map(int.parse)
 }
