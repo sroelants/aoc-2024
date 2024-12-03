@@ -1,75 +1,61 @@
-import gleam/io
-import gleam/string
-import gleam/result
-import gleam/list
+import gleam/bool
 import gleam/int
+import gleam/io
+import gleam/list
+import gleam/result
+import gleam/string
 import simplifile as fs
 
-type Level = Int
-type Report = List(Level)
+type Report =
+  List(Int)
 
 pub fn main() {
-  let input = fs.read(from: "./input.txt") 
+  let assert Ok(reports) =
+    fs.read(from: "./input.txt")
     |> result.unwrap("")
-    |> string.trim() 
+    |> string.trim()
     |> parse_input
 
-  io.print("Part 1: ")
-  io.println(part1(input))
-
-  io.print("Part 2: ")
-  io.println(part2(input))
+  io.println("Part 1: " <> part1(reports))
+  io.println("Part 2: " <> part2(reports))
 }
 
-fn part1(input: List(Report)) -> String {
-  let assert Ok(reports) = parse_input(input)
+fn part1(reports: List(Report)) -> String {
   reports |> list.count(is_safe(_, 0)) |> int.to_string
 }
 
-fn part2(input: List(Report)) -> String {
-  let assert Ok(reports) = parse_input(input)
+fn part2(reports: List(Report)) -> String {
   reports |> list.count(is_safe(_, 1)) |> int.to_string
 }
 
 /// Check whether a report is safe, omitting up to `threshold` levels
 fn is_safe(report: Report, threshold: Int) -> Bool {
-  case threshold {
-    0 -> {
-      let steps = report |> list.window_by_2 |> list.map(fn (p) { p.0 - p.1 })
-      list.all(steps, safe_increasing) || list.all(steps, safe_decreasing)
-    }
+  let steps = report |> list.window_by_2 |> list.map(fn(p) { p.0 - p.1 })
+  let safe_increasing = list.all(steps, fn(step) { 1 <= step && step <= 3 })
+  let safe_decreasing = list.all(steps, fn(step) { -3 <= step && step <= -1 })
 
-    threshold -> {
-      report 
-        |> list.combinations(list.length(report) - 1) 
-        |> list.any(is_safe(_, threshold - 1))
-    }
-  }
+  // If we're safe, profit! 🥳
+  use <- bool.guard(safe_increasing || safe_decreasing, True)
+
+  // If we're not safe, and we're not allowed to omit levels, sadness. 🙁
+  use <- bool.guard(threshold <= 0, False)
+
+  // If we're allowed to omit levels, omit one and retest for safety
+  let reductions = list.combinations(report, list.length(report) - 1)
+  list.any(reductions, is_safe(_, threshold - 1))
 }
-
-/// Check whether a step between two increasing levels is safe
-fn safe_increasing(step: Int) -> Bool {
-  1 <= step && step <= 3
-}
-
-/// Check whether a step between two decreasing levels is safe
-fn safe_decreasing(step: Int) -> Bool {
-  -3 <= step && step <= -1
-}
-
-// Parsing
 
 fn parse_input(input: String) -> Result(List(Report), Nil) {
-  input 
-    |> string.split("\n") 
-    |> list.map(parse_line)
-    |> result.all
+  input
+  |> string.split("\n")
+  |> list.map(parse_report)
+  |> result.all
 }
 
-fn parse_line(line: String) -> Result(Report, Nil) {
-  line 
-    |> string.trim()
-    |> string.split(" ")
-    |> list.map(int.parse)
-    |> result.all
+fn parse_report(line: String) -> Result(Report, Nil) {
+  line
+  |> string.trim()
+  |> string.split(" ")
+  |> list.map(int.parse)
+  |> result.all
 }
