@@ -12,6 +12,7 @@ pub fn main() {
   let input = fs.read(from: "./input.txt") 
     |> result.unwrap("")
     |> string.trim() 
+    |> parse_input
 
   io.print("Part 1: ")
   io.println(part1(input))
@@ -20,12 +21,12 @@ pub fn main() {
   io.println(part2(input))
 }
 
-fn part1(input: String) -> String {
+fn part1(input: List(Report)) -> String {
   let assert Ok(reports) = parse_input(input)
   reports |> list.count(is_safe(_, 0)) |> int.to_string
 }
 
-fn part2(input: String) -> String {
+fn part2(input: List(Report)) -> String {
   let assert Ok(reports) = parse_input(input)
   reports |> list.count(is_safe(_, 1)) |> int.to_string
 }
@@ -72,4 +73,3 @@ fn parse_line(line: String) -> Result(Report, Nil) {
     |> list.map(int.parse)
     |> result.all
 }
-
