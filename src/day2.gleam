@@ -1,23 +1,18 @@
 import gleam/bool
 import gleam/int
-import gleam/io
 import gleam/list
 import gleam/result
 import gleam/string
-import simplifile as fs
+import helpers.{Solution, type Solution}
 
 type Report =
   List(Int)
 
-pub fn main() {
-  let assert Ok(reports) =
-    fs.read("./input.txt")
-    |> result.unwrap("")
-    |> string.trim()
-    |> parse_input
+pub fn run(file: String) -> Result(Solution, String) {
+  use input <- result.try(helpers.read_file(file))
+  use reports <- result.try(parse_input(input))
 
-  io.println("Part 1: " <> int.to_string(part1(reports)))
-  io.println("Part 2: " <> int.to_string(part2(reports)))
+  Ok(Solution(part1(reports), part2(reports)))
 }
 
 fn part1(reports: List(Report)) -> Int {
@@ -45,15 +40,16 @@ fn is_safe(report: Report, threshold: Int) -> Bool {
   list.any(reductions, is_safe(_, threshold - 1))
 }
 
-fn parse_input(input: String) -> Result(List(Report), Nil) {
+fn parse_input(input: String) -> Result(List(Report), String) {
   input
+  |> string.trim()
   |> string.split("\n")
   |> list.try_map(parse_report)
 }
 
-fn parse_report(line: String) -> Result(Report, Nil) {
+fn parse_report(line: String) -> Result(Report, String) {
   line
-  |> string.trim()
   |> string.split(" ")
   |> list.try_map(int.parse)
+  |> result.replace_error("Failed to parse report: " <> line)
 }

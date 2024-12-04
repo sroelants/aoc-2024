@@ -6,31 +6,31 @@ import gleam/regexp.{Match, type Match}
 import gleam/regexp as re
 import gleam/result
 import gleam/string
-import simplifile as fs
+import helpers.{Solution, type Solution}
 
-pub fn main() {
-  let assert Ok(input) = fs.read("./input.txt")
-
-  io.println("Part 1: " <> int.to_string(part1(input)))
-  io.println("Part 2: " <> int.to_string(part2(input)))
+pub fn run(file: String) -> Result(Solution, String) {
+  use input <- result.try(helpers.read_file(file))
+  use p1 <- result.try(part1(input))
+  use p2 <- result.try(part2(input))
+  Ok(Solution(p1, p2))
 }
 
-fn part1(input: String) -> Int {
+fn part1(input: String) -> Result(Int, String) {
   let grammar = ["mul\\((\\d{1,3}),(\\d{1,3})\\)"]
-  let assert Ok(instructions) = parse_input(input, grammar)
+  use instructions <- result.try(parse_input(input, grammar))
 
-  instructions 
+  Ok(instructions 
     |> list.fold(State(value: 0, active: True), apply_instruction)
-    |> fn (state) { state.value }
+    |> fn (state) { state.value })
 }
 
-fn part2(input: String) -> Int {
+fn part2(input: String) -> Result(Int, String) {
   let grammar = ["mul\\((\\d{1,3}),(\\d{1,3})\\)", "do\\(\\)", "don't\\(\\)"]
-  let assert Ok(instructions) = parse_input(input, grammar)
+  use instructions <- result.try(parse_input(input, grammar))
 
-  instructions 
+  Ok(instructions 
     |> list.fold(State(value: 0, active: True), apply_instruction)
-    |> fn (state) { state.value }
+    |> fn (state) { state.value })
 }
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -64,23 +64,27 @@ fn apply_instruction(state: State, instr: Instruction) -> State {
 //
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
-fn parse_input(input: String, grammar: List(String)) -> Result(List(Instruction), Nil) {
-  let assert Ok(regex) = re.from_string(string.join(grammar, "|"))
+fn parse_input(
+  input: String, 
+  grammar: List(String)
+) -> Result(List(Instruction), String) {
+  let regex_string = string.join(grammar, "|")
+  use regex <- result.try(re.from_string(regex_string) |> result.replace_error("Invalid regex: " <> regex_string))
 
   input 
   |> re.scan(regex, _) 
   |> list.try_map(match_to_instruction)
 }
 
-fn match_to_instruction(match: Match) -> Result(Instruction, Nil) {
+fn match_to_instruction(match: Match) -> Result(Instruction, String) {
   case match {
     Match(_, [Some(a), Some(b)]) -> {
-      use a <- result.try(int.parse(a))
-      use b <- result.try(int.parse(b))
+      use a <- result.try(int.parse(a) |> result.replace_error("Failed to parse: " <> a))
+      use b <- result.try(int.parse(b) |> result.replace_error("Failed to parse: " <> b))
       Ok(Mul(a, b))
     }
     Match("do()", _) -> Ok(Do)
     Match("don't()", _) -> Ok(Dont)
-    _ -> Error(Nil)
+    Match(m, _) -> Error("Invalid instruction: " <> m)
   }
 }
