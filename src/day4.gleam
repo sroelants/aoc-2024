@@ -46,6 +46,19 @@ type Step {
   Step(dx: Int, dy: Int)
 }
 
+fn move(point: Point, step: Step) -> Point {
+  Point(point.x + step.dx, point.y + step.dy)
+}
+
+fn look_4(point: Point, step: Step) -> List(Point) {
+  [
+    point, 
+    point |> move(step), 
+    point |> move(step) |> move(step),
+    point |> move(step) |> move(step) |> move(step)
+  ] 
+}
+
 const dirs = [
   Step( 0,  1),
   Step( 0, -1),
@@ -57,17 +70,8 @@ const dirs = [
   Step(-1,  0),
 ]
 
-fn move(point: Point, step: Step) -> Point {
-  Point(point.x + step.dx, point.y + step.dy)
-}
-
-fn look(point: Point, step: Step) -> List(Point) {
-  [
-    point, 
-    point |> move(step), 
-    point |> move(step) |> move(step),
-    point |> move(step) |> move(step) |> move(step)
-  ] 
+fn look_all_dirs(point: Point) -> List(List(Point)) {
+  dirs |> list.map(look_4(point, _))
 }
 
 fn look_x(point: Point) -> List(List(Point)) {
@@ -77,17 +81,17 @@ fn look_x(point: Point) -> List(List(Point)) {
   ]
 }
 
-fn find_xmas(grid: Grid, point: Point) -> Int {
-  dirs
-  |> list.map(look(point, _))
-  |> list.map(read_word(grid, _))
-  |> list.count(fn(w) { w == Ok("XMAS") })
-}
-
 fn read_word(grid: Grid, points: List(Point)) -> Result(String, Nil) {
   points
   |> list.try_map(dict.get(grid, _))
   |> result.map(string.join(_, ""))
+}
+
+fn find_xmas(grid: Grid, point: Point) -> Int {
+  point
+  |> look_all_dirs
+  |> list.map(read_word(grid, _))
+  |> list.count(fn(w) { w == Ok("XMAS") })
 }
 
 fn find_x_mas(grid: Grid, point: Point) -> Bool {
