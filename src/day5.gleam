@@ -1,7 +1,6 @@
 import gleam/list
 import gleam/int
-import gleam/io
-import gleam/order.{type Order, Lt, Gt}
+import gleam/order.{type Order, Gt}
 import gleam/dict.{type Dict}
 import gleam/result
 import gleam/string
@@ -44,7 +43,7 @@ fn part2(book: RuleBook, updates: List(Update)) -> Result(Int, String) {
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 type RuleBook = Dict(#(Int, Int), Order)
 
-type Update = List(Int) // TODO: Make this a Dict so we have constant time access?
+type Update = List(Int)
 
 fn get_middle(update: Update) -> Int {
   let idx = list.length(update) / 2
