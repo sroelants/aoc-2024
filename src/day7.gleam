@@ -1,3 +1,4 @@
+import gleam/bool
 import gleam/list
 import gleam/int
 import gleam/string
@@ -76,12 +77,33 @@ fn eval_expr(expr: Expr) -> Int {
 fn valid_combinations(eq: Equation, grammar: List(Token)) -> Int {
   eq.terms
   |> generate_exprs(grammar)
-  |> list.map(eval_expr)
-  |> list.count(fn(val) { val == eq.expected })
+  |> list.count(validate(_, eq.expected))
+}
+
+fn validate(expr: Expr, expected: Int) -> Bool {
+  case expr {
+    [Val(v)] -> v == expected
+
+    [Val(a), Plus, Val(b), ..rest] -> {
+      use <- bool.guard(a + b > expected, False)
+      validate([Val(a+b), ..rest], expected)
+    }
+
+    [Val(a), Times, Val(b), ..rest] -> {
+      use <- bool.guard(a + b > expected, False)
+      validate([Val(a*b), ..rest], expected)
+    }
+
+    [Val(a), Concat, Val(b), ..rest] -> {
+      use <- bool.guard(a + b > expected, False)
+      validate([Val(concat(a, b)), ..rest], expected)
+    }
+    _ -> panic as "Invalid expression"
+  }
 }
 
 fn combine_with_token(val: Int, token: Token, expr: Expr) -> Expr {
-    list.append([Val(val), token], expr)
+  list.append([Val(val), token], expr)
 }
 
 fn concat(a: Int, b: Int) -> Int {
