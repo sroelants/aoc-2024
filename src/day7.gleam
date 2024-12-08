@@ -15,19 +15,20 @@ pub fn run(file: String) -> Result(Solution, String) {
 }
 
 fn part1(eqs: List(Equation)) -> Result(Int, String) {
-  let grammar = [Plus, Times]
-  eqs 
-  |> list.filter(fn(eq) { valid_combinations(eq, grammar) > 0 })
+  let ops = [add, mult]
+
+  eqs
+  |> list.filter(fn(eq) { validate_terms(eq.terms, eq.expected, ops) })
   |> list.map(fn(eq) { eq.expected })
   |> int.sum
   |> Ok
 }
 
 fn part2(eqs: List(Equation)) -> Result(Int, String) {
-  let grammar = [Plus, Times, Concat]
+  let ops = [add, mult, concat]
 
-  eqs 
-  |> list.filter(fn(eq) { valid_combinations(eq, grammar) > 0 })
+  eqs
+  |> list.filter(fn(eq) { validate_terms(eq.terms, eq.expected, ops) })
   |> list.map(fn(eq) { eq.expected })
   |> int.sum
   |> Ok
@@ -42,69 +43,35 @@ type Equation {
   Eq(expected: Int, terms: List(Int))
 }
 
-type Token {
-  Val(Int)
-  Plus
-  Times
-  Concat
-}
-
-type Expr = List(Token)
-
-fn generate_exprs(terms: List(Int), grammar: List(Token)) -> List(Expr) {
+/// Validate terms by combinging the first two elements with one of the
+/// provided combinators, and combining recursively with the remaining terms
+fn validate_terms(terms: List(Int), expected: Int, ops: List(fn(Int, Int) -> Int)) -> Bool {
   case terms {
-    [] -> list.new()
-    [term] -> [[Val(term)]]
-    [head, ..tail] -> {
-      let remaining = generate_exprs(tail, grammar)
-      use expr <- list.flat_map(remaining)
-      use token <- list.map(grammar)
-      combine_with_token(head, token, expr)
+    [term] -> term == expected
+
+    // Try combining the first two elements with all of the provided
+    // combinators.
+    //
+    // If we can tell ahead of time that the expression can never be valid
+    // (because the current head already exceeds the expected result), we
+    // return early
+    [first, second, ..rest] -> {
+      list.any(ops, fn(op) {
+        // Return early if we've already exceeded the expected result
+        use <- bool.guard(op(first, second) > expected, False)
+
+        // Combine the first two terms, and repeat
+        validate_terms([op(first, second), ..rest], expected, ops)
+      })
     }
+
+    _ -> panic as "Unreachable"
   }
 }
 
-fn eval_expr(expr: Expr) -> Int {
-  case expr {
-    [Val(v)] -> v
-    [Val(a), Plus, Val(b), ..rest] -> eval_expr([Val(a+b), ..rest])
-    [Val(a), Times, Val(b), ..rest] -> eval_expr([Val(a*b), ..rest])
-    [Val(a), Concat, Val(b), ..rest] -> eval_expr([Val(concat(a, b)), ..rest])
-    _ -> panic as "Invalid expression"
-  }
-}
+fn add(a: Int, b: Int) -> Int { a + b }
 
-fn valid_combinations(eq: Equation, grammar: List(Token)) -> Int {
-  eq.terms
-  |> generate_exprs(grammar)
-  |> list.count(validate(_, eq.expected))
-}
-
-fn validate(expr: Expr, expected: Int) -> Bool {
-  case expr {
-    [Val(v)] -> v == expected
-
-    [Val(a), Plus, Val(b), ..rest] -> {
-      use <- bool.guard(a + b > expected, False)
-      validate([Val(a+b), ..rest], expected)
-    }
-
-    [Val(a), Times, Val(b), ..rest] -> {
-      use <- bool.guard(a + b > expected, False)
-      validate([Val(a*b), ..rest], expected)
-    }
-
-    [Val(a), Concat, Val(b), ..rest] -> {
-      use <- bool.guard(a + b > expected, False)
-      validate([Val(concat(a, b)), ..rest], expected)
-    }
-    _ -> panic as "Invalid expression"
-  }
-}
-
-fn combine_with_token(val: Int, token: Token, expr: Expr) -> Expr {
-  list.append([Val(val), token], expr)
-}
+fn mult(a: Int, b: Int) -> Int { a * b }
 
 fn concat(a: Int, b: Int) -> Int {
   let assert Ok(digits) = int.digits(b, 10)
