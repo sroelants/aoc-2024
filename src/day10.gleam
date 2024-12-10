@@ -1,7 +1,7 @@
 import gleam/bool
+import gleam/dict.{type Dict}
 import gleam/int
 import gleam/list
-import gleam/dict.{type Dict}
 import gleam/result
 import gleam/string
 import helpers.{type Solution, Solution}
@@ -37,19 +37,19 @@ fn part2(map: Map) -> Result(Int, String) {
 // Helpers
 //
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-type Position = #(Int, Int)
-type Map = Dict(Position, Int)
+type Position =
+  #(Int, Int)
+
+type Map =
+  Dict(Position, Int)
 
 fn find_trailheads(map: Map) -> List(Position) {
-  map 
-    |> dict.to_list 
-    |> list.filter(fn(entry) { entry.1 == 0 })
-    |> list.map(fn(entry) { entry.0 })
+  map
+  |> dict.filter(fn(_, v) { v == 0 })
+  |> dict.keys
 }
 
 /// Return the list of peaks reachable from a given start
-/// Essentially does a DFS, searching only adjacent positions that
-/// satisfy all the conditions
 ///
 /// This may return duplicates if the same peak is reachable in along
 /// different trails
@@ -58,26 +58,23 @@ fn find_peaks(map: Map, current: Position) -> List(Position) {
   use <- bool.guard(current_height == 9, [current])
 
   let neighbors = neighbors(current)
-  let accessible = list.filter(neighbors, accessible(map, current, _))
-
-  // Recurse and return the peaks accessible from each of the neighbors
+  let accessible = list.filter(neighbors, is_accessible(map, current, _))
   list.flat_map(accessible, find_peaks(map, _))
 }
 
-fn neighbors(p: Position) -> List(Position) {
-  [#(p.0, p.1 - 1), #(p.0, p.1 + 1),#(p.0 - 1, p.1), #(p.0 + 1, p.1)] 
-}
-
-/// Test whether a target position is accessible
-/// - Inside the map
-/// - One unit higher than the current position
-fn accessible(map: Map, current: Position, next: Position) -> Bool {
+fn is_accessible(map: Map, current: Position, next: Position) -> Bool {
   let assert Ok(current_height) = dict.get(map, current)
+
   case dict.get(map, next) {
     Ok(next_height) if next_height == current_height + 1 -> True
     _ -> False
   }
 }
+
+fn neighbors(p: Position) -> List(Position) {
+  [#(p.0, p.1 - 1), #(p.0, p.1 + 1), #(p.0 - 1, p.1), #(p.0 + 1, p.1)]
+}
+
 
 // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 //
