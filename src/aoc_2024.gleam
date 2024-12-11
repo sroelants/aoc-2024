@@ -11,6 +11,7 @@ import day7
 import day8
 import day9
 import day10
+import day11
 
 pub fn main() {
   let result = case argv.load().arguments {
@@ -24,6 +25,7 @@ pub fn main() {
     ["day8", input] -> day8.run(input)
     ["day9", input] -> day9.run(input)
     ["day10", input] -> day10.run(input)
+    ["day11", input] -> day11.run(input)
     [unrecognized, _] -> Error("Not implemented: " <> unrecognized)
     _ -> Error("Usage: aoc_2024 <day> <input>")
   }
