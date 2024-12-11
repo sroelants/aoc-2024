@@ -208,31 +208,6 @@ fn parse_input(input: String) -> Result(List(Block), String) {
   Ok(list.reverse(parsed_blocks))
 }
 
-fn parse_simple_compacter(input: String) -> CompacterMk2 {
-  let chars = input |> string.trim() |> string.to_graphemes
-  let assert Ok(digits) = list.try_map(chars, int.parse)
-  let compacter = CompacterMk2(list.new(), list.new(), list.new(), 0)
-  use current, digit, i <- list.index_fold(digits, compacter)
-
-  case i % 2 == 0 {
-    True -> {
-      let loc = current.size
-      let block = FileBlock(id: i / 2, loc:, size: digit)
-      let files = list.prepend(current.files, block)
-      let size = current.size + block.size
-      CompacterMk2(..current, files:, size:)
-    }
-
-    False -> {
-      let loc = current.size
-      let block = FreeBlock(loc:, size: digit)
-      let free = list.prepend(current.free, block)
-      let size = current.size + block.size
-      CompacterMk2(..current, free:, size:)
-    }
-  }
-}
-
 fn parse_compacter(input: String) -> CompacterMk2 {
   let chars = input |> string.trim() |> string.to_graphemes
   let assert Ok(digits) = list.try_map(chars, int.parse)
